@@ -1,36 +1,34 @@
 <?php
 
-
 $input_params = [
 	[
 		'text' => 'Текст красного цвета',
-	 	'cells' => '2,1,3',
+	 	'cells' => '2,4,3',
 	 	'align' => 'center',
 	 	'valign' => 'top',
 	 	'color' => '#FF0000',
 	 	'bgcolor' => '#0000FF'
- 	], 
-	[ 
-		'text' => 'Текст зеленого цвета',
-	 	'cells' => '8,9',
-	 	'align' => 'left',
-	 	'valign' => 'bottom',
-	 	'color' => '#FFF',
-	 	'bgcolor' => 'green'
-	],
-	[ 
-		'text' => 'Текст зеленого цвета',
-	 	'cells' => '12,13,14,15',
-	 	'align' => 'right',
-	 	'valign' => 'middle',
-	 	'color' => 'black',
-	 	'bgcolor' => 'red'
-	]
+ 	],
+ 	[
+		'text' => 'Текст красного цвета',
+	 	'cells' => '12,11,13',
+	 	'align' => 'center',
+	 	'valign' => 'top',
+	 	'color' => '#FF0000',
+	 	'bgcolor' => '#0000FF'
+ 	],
+ 	[
+		'text' => 'Текст красного цвета',
+	 	'cells' => '10,15',
+	 	'align' => 'center',
+	 	'valign' => 'top',
+	 	'color' => '#FF0000',
+	 	'bgcolor' => '#0000FF'
+ 	]
 ];
 
-	$col_cnt = 5;
-	$row_cnt = 3;
-
+	$col_cnt = 5; // Количество ячеек в строке
+	$row_cnt = 3; // Количество строк в таблице
 	$box_size = 100;
 	$wrap_width = $col_cnt * $box_size;
 	$wrap_height = $row_cnt * $box_size;
@@ -39,32 +37,31 @@ function generate( $params ) {
 
 	global $col_cnt;
 	global $row_cnt;
-
 	global $box_size;
 	global $wrap_width;
 	global $wrap_height;
 
-	$cells = [];
-	$base = [];
+	$cells = []; // Массив всех ячеек в таблице
 
+// Цикл по строкам таблицы
+for ($i=0; $i < $row_cnt; $i++) { 
+	for ($j=1; $j <= $col_cnt; $j++) { 
+		$cell = ($j+$i*$col_cnt);
+		$cells[] = $cell; 
+	}
+}
 
+// В данном цикле выбираются значение из поля "cells" и возвращают их в качестве отсортированого массива
 for($i = 0; $i < count($params); $i++) {
 	$block[] = explode(',', $params[$i]['cells']);
 	sort($block[$i]);
 }
 
-for ($i=0; $i < $row_cnt; $i++) { 
-	for ($j=1; $j <= $col_cnt; $j++) { 
-		$cell = ($j+$i*$col_cnt);	
-		$cells[] = $cell;
-	}
-}
-
+// Определяем размер генерируемых блоков и последующее удаление данных ячеек из общего массива ячеек 
 for ($i=0; $i < count($block); $i++) { 
 	$rowspan = 1;
 	$colspan = 1;
 	for ($j=0; $j < count($block[$i])-1; $j++) { 
-		unset($cells[array_search($block[$i][$j], $cells)]);
 		if(floor(($block[$i][$j]-1)/$col_cnt) == floor(($block[$i][$j+1]-1)/$col_cnt)){
 			$colspan++;
 			unset($cells[array_search($block[$i][$j+1], $cells)]);
@@ -74,25 +71,25 @@ for ($i=0; $i < count($block); $i++) {
 			unset($cells[array_search($block[$i][$j+1], $cells)]);
 		}
 	}
+	unset($cells[array_search($block[$i][0], $cells)]);
+
+	// Полученые данные заносим в массив каждого блока
 	$block[$i]['colspan'] = $colspan;
 	$block[$i]['rowspan'] = $rowspan;
+	// Также заносим передаваемые атрибуты для блоков
 	$block[$i]['attr'] = $params[$i];
 }
 
-    //echo '<pre>';
-    //print_r($block);
-    //echo '</pre>';
-    //print_r($cells);
-
 $html = "<table class='wrapper'>";
-
+// Генерируем таблицу
 $cnt = 1;
 for ($i=1; $i <= $row_cnt; $i++) { 
 	$html .= "<tr>";
-	for ($j=$cnt; $j <= $i*$col_cnt; $j++) { 
+	for ($j=$cnt; $j <= $i*$col_cnt; $j++) {
+		// Проверяем не входят ли ячейки в генерируемые блоки
 		for ($k=0; $k < count($block); $k++) { 
 			if($j == $block[$k][0]){
-				
+				// Если входят, то выводим блок с задаными размерами и стилями 
 				$styles = '';
 				$styles .= 
 				"text-align:" . $block[$k]['attr']['align'] .
@@ -103,6 +100,7 @@ for ($i=1; $i <= $row_cnt; $i++) {
 				$html .= "<td colspan=".$block[$k]['colspan']." rowspan=".$block[$k]['rowspan']." style='" . $styles . "'>" . $block[$k]['attr']['text'] . "</td>";
 			} 
 		}
+		// Выводим ячеки которые не входят в получаемые блоки 
 		if(in_array($j, $cells)){
 			$html .= "<td>" . $j. "</td>";
 		}
